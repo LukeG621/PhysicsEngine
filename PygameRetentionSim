@@ -1,0 +1,120 @@
+# setting up pygame stuff
+import pygame
+
+pygame.init()
+
+WIDTH = 1000
+HEIGHT = 800
+screen = pygame.display.set_mode([WIDTH, HEIGHT])
+base_font = pygame.font.Font(None, 32)
+user_text = ''
+
+input_rect = pygame.Rect(400, 20, 140, 32)
+color = pygame.Color('lightskyblue3')
+
+fps = 60
+timer = pygame.time.Clock()
+
+# game variables
+wall_thickness = 10
+gravity = 0.5
+bounce_stop = 0.3
+
+class Ball:
+    def __init__(self, x_pos, y_pos, radius, color, mass, retention, y_speed, x_speed, id):
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+        self.radius = radius
+        self.color = color
+        self.mass = mass
+        self.retention = retention
+        self.y_speed = y_speed
+        self.x_speed = x_speed
+        self.id = id
+        self.circle = ''
+        self.bounce_count = 0
+    
+    def draw(self):
+        self.circle = pygame.draw.circle(screen, self.color, (self.x_pos, self.y_pos), self.radius)
+
+    def check_gravity(self):
+        if self.y_pos < HEIGHT - self.radius - (wall_thickness / 2):
+            self.y_speed += gravity
+        else:
+            if self.y_speed > bounce_stop:
+                self.y_speed = self.y_speed * -1 * self.retention
+                self.bounce_count += 1
+            else:
+                if abs(self.y_speed) <= bounce_stop:
+                    self.y_speed = 0
+        if (self.x_pos < self.radius + (wall_thickness / 2) and self.x_speed < 0) or (self.x_pos > WIDTH - self.radius - (wall_thickness / 2) and self.x_speed > 0):
+            self.x_speed *= -1 * self.retention
+            if abs(self.x_speed) < bounce_stop:
+                self.x_speed = 0
+        return self.y_speed
+    
+    def update_pos(self, mouse):
+        self.y_pos += self.y_speed
+        self.x_pos += self.x_speed
+
+def draw_walls():
+    left = pygame.draw.line(screen, 'white', (0, 0), (0, HEIGHT), wall_thickness)
+    right = pygame.draw.line(screen, 'white', (WIDTH, 0), (WIDTH, HEIGHT), wall_thickness)
+    top = pygame.draw.line(screen, 'white', (0, 0), (WIDTH, 0), wall_thickness)
+    bottom = pygame.draw.line(screen, 'white', (0, HEIGHT), (WIDTH, HEIGHT), wall_thickness)
+    wall_list = [left, right, top, bottom]
+    return wall_list
+
+# main game loop
+balls = []
+last_ball = None
+run = True
+while run:
+    timer.tick(fps)
+    screen.fill('black')
+    walls = draw_walls()
+
+    pygame.draw.rect(screen, color, input_rect, 2)
+
+    text_surface = base_font.render(user_text, True, (255, 255, 255))
+    screen.blit(text_surface, (input_rect.x + 5, input_rect.y + 5))
+
+    input_rect.w = text_surface.get_width() + 10
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_BACKSPACE:
+                user_text = user_text[0:-1]
+            elif event.key == pygame.K_RETURN:
+                try:
+                    radius = int(user_text.strip())
+                    x_pos = WIDTH // 2
+                    y_pos = HEIGHT // 2
+                    color = pygame.Color('red')
+                    new_ball = Ball(x_pos, y_pos, radius, color, 1, 0.8, 0, 0, len(balls))
+                    
+                    if balls:
+                        balls.pop()
+                    balls.append(new_ball)
+                    last_ball = new_ball
+                    user_text = ''
+                except ValueError:
+                    print("Please enter a valid integer for the radius.")
+                    user_text = ''
+            else:
+                user_text += event.unicode
+    
+    for ball in balls:
+        ball.check_gravity()
+        ball.update_pos(None)
+        ball.draw()
+    
+    if last_ball:
+        bounce_count_text = f'Bounce Count: {last_ball.bounce_count}'
+        bounce_count_surface = base_font.render(bounce_count_text, True, (255, 255, 255))
+        screen.blit(bounce_count_surface, (input_rect.x, input_rect.y + 40))
+
+    pygame.display.flip()
+pygame.quit()
