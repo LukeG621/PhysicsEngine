@@ -1,3 +1,4 @@
-Physics Engine Goal:
+Notes for Newton's Toolbox:
 
-Make a program that could help simulate AP Physics 1 Concepts using pygame
+- Finish and revise all of the sims so that they look good
+- Make it into a Windows Application
